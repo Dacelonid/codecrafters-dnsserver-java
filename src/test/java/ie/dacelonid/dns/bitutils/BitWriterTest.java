@@ -1,6 +1,6 @@
-import org.junit.jupiter.api.Test;
+package ie.dacelonid.dns.bitutils;
 
-import java.util.Arrays;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class BitWriterTest {
 
     @Test
-    public void testSingleBytePacking(){
+    public void testSingleBytePacking() {
         BitWriter writer = new BitWriter(1);
         writer.writeBits(0b101, 3);
         byte[] bytes = writer.getBytes();
@@ -18,8 +18,9 @@ public class BitWriterTest {
         int val = reader.readBits(3);
         assertEquals(0b101, val);
     }
+
     @Test
-    public void testMultiBytePacking(){
+    public void testMultiBytePacking() {
         BitWriter writer = new BitWriter(2);
         writer.writeBits(0xA, 4);   // 1010
         writer.writeBits(0xB, 4);   // 1011
@@ -34,7 +35,7 @@ public class BitWriterTest {
     }
 
     @Test
-    public void testCrossByteBoundary(){
+    public void testCrossByteBoundary() {
         BitWriter writer = new BitWriter(2);
         writer.writeBits(0b11111, 5);
         writer.writeBits(0b001, 3);
@@ -47,6 +48,5 @@ public class BitWriterTest {
 
         assertEquals(0x1F, val1);
         assertEquals(0x1, val2);
-
     }
 }

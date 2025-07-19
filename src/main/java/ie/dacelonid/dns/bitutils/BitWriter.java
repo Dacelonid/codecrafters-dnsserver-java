@@ -1,4 +1,4 @@
-import java.util.Arrays;
+package ie.dacelonid.dns.bitutils;
 
 /**
  * A utility class for writing bits into a byte array (MSB-first).
@@ -26,9 +26,5 @@ public class BitWriter {
 
     public byte[] getBytes() {
         return buffer;
-    }
-
-    public int getBitPos() {
-        return bitPos;
     }
 }

@@ -1,3 +1,7 @@
+package ie.dacelonid.dns.structure;
+
+import ie.dacelonid.dns.bitutils.BitWriter;
+
 public class Header {
     private final int packetID;
     private final int queryResponseID;
@@ -51,7 +55,7 @@ public class Header {
         additionalRecordCount = builder.additionalRecordCount;
     }
 
-    static class HeaderBuilder {
+    public static class HeaderBuilder {
         private int packetID = 0;
         private int queryResponseID = 0;
         private int opCode = 0;
