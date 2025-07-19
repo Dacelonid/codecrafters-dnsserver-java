@@ -1,7 +1,8 @@
+package ie.dacelonid.dns.bitutils;
 /**
  * A utility class for reading bits from a byte array (MSB-first).
  */
-class BitReader {
+public class BitReader {
     private final byte[] buffer;
     private int bitPos = 0;
 
@@ -22,9 +23,5 @@ class BitReader {
             bitPos++;
         }
         return result;
-    }
-
-    public int getBitPos() {
-        return bitPos;
     }
 }
