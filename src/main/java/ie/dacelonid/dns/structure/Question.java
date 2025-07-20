@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class Question {
 
@@ -105,10 +106,12 @@ public class Question {
             return new Question(this);
         }
 
-        public Question from(byte[] data) {
-            parseNameFromData(data);
-            parseTypeFromData(data);
-            parseClassFromData(data);
+        public Question from(byte[] data, int count) {
+            for (int x = 0;x<=count;x++) {
+                parseNameFromData(data);
+                parseTypeFromData(data);
+                parseClassFromData(data);
+            }
             return new Question(this);
         }
 
@@ -133,19 +136,21 @@ public class Question {
         }
 
         private void parseNameFromData(byte[] data) {
-            StringBuilder name = new StringBuilder();
+            StringJoiner name = new StringJoiner(".");
             while (position < data.length) {
-                int length = data[position]; //first record is the length of the record
-                name.append(new String(data, position+1, length, StandardCharsets.UTF_8));
-                position += length;
-                if (data[position++] == 0) {
-                    break;
-                }else{
-                    name.append(".");
+                int length = data[position++] & 0xFF; // read length and advance
+
+                if (length == 0) {
+                    break; // null terminator indicates end of name
+                }else if(length == 192) { //compression
+                    System.out.println("compression ");
                 }
 
+                name.add(new String(data, position, length, StandardCharsets.UTF_8));
+                position += length;
             }
-            this.name = name.substring(0, name.length()-1);
+            this.name = name.toString();
         }
+
     }
 }

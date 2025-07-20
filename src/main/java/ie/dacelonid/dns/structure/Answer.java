@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class Answer {
     @Override
@@ -57,16 +58,7 @@ public class Answer {
                 output.write(s.getBytes(StandardCharsets.UTF_8));
             }
             output.write(0x00);
-//
-//
-//            String[] split = name.split("\\.");
-//            byte[] sld = split[0].getBytes(StandardCharsets.UTF_8);
-//            byte[] tld = split[1].getBytes(StandardCharsets.UTF_8);
-//            output.write(sld.length);
-//            output.write(sld);
-//            output.write(tld.length);
-//            output.write(tld);
-//            output.write(0x00);
+
             output.write(intToBytes(type, 2));
             output.write(intToBytes(classValue, 2));
             output.write(intToBytes(timeToLive, 4));
@@ -77,12 +69,12 @@ public class Answer {
         }
         return output.toByteArray();
     }
+
     private byte[] intToBytes(int x, int size) {
         ByteBuffer buffer = ByteBuffer.allocate(size);
-        if(size ==2) {
+        if (size == 2) {
             buffer.putShort((short) x);
-        }
-        else{
+        } else {
             buffer.putInt(x);
         }
         return buffer.flip().array();
@@ -115,10 +107,12 @@ public class Answer {
             this.timeToLive = timeToLive;
             return this;
         }
+
         public AnswerBuilder length(int length) {
             this.length = length;
             return this;
         }
+
         public AnswerBuilder data(String data) {
             String[] parts = data.split("\\.");
             if (parts.length != 4) {
@@ -134,19 +128,21 @@ public class Answer {
             return this;
         }
 
-        public Answer build(){
+        public Answer build() {
             return new Answer(this);
         }
 
-        public Answer from(byte[] data) {
-            Question question = new Question.QuestionBuilder().from(data);
+        public Answer from(byte[] data, int whichAnswer, int totalQuestions) {
+            Question question = new Question.QuestionBuilder().from(data, totalQuestions);//skip the Question part
             int position = question.getPosition();
-            position = parseNameFromData(data, position);
-            position = parseTypeFromData(data, position);
-            position = parseClassFromData(data, position);
-            position = parseTimeToLiveFromData(data, position);
-            position = parseLengthFromData(data, position);
-            position = parseDataFromData(data, position);
+            for (int x = 0; x <= whichAnswer; x++) {
+                position = parseNameFromData(data, position);
+                position = parseTypeFromData(data, position);
+                position = parseClassFromData(data, position);
+                position = parseTimeToLiveFromData(data, position);
+                position = parseLengthFromData(data, position);
+                position = parseDataFromData(data, position);
+            }
             return new Answer(this);
         }
 
@@ -206,21 +202,20 @@ public class Answer {
         }
 
         private int parseNameFromData(byte[] data, int position) {
-            StringBuilder name = new StringBuilder();
+            StringJoiner name = new StringJoiner(".");
             while (position < data.length) {
-                int length = data[position]; //first record is the length of the record
-                name.append(new String(data, position+1, length, StandardCharsets.UTF_8));
-                position += length;
-                if (data[position++] == 0) {
-                    break;
-                }else{
-                    name.append(".");
+                int length = data[position++] & 0xFF; // read length and advance
+
+                if (length == 0) {
+                    break; // null terminator indicates end of name
                 }
 
+                name.add(new String(data, position, length, StandardCharsets.UTF_8));
+                position += length;
             }
-            this.name = name.substring(0, name.length()-1);
-
+            this.name = name.toString();
             return position;
         }
+
     }
 }
