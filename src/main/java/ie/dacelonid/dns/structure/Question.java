@@ -4,8 +4,31 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class Question {
+
+    private int position;
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Question question)) return false;
+        return type == question.type && classValue == question.classValue && Objects.equals(name, question.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, type, classValue);
+    }
+
+    @Override
+    public String toString() {
+        return "Question{" +
+                "name='" + name + '\'' +
+                ", type=" + type +
+                ", classValue=" + classValue +
+                '}';
+    }
 
     String name;
     int type;
@@ -27,6 +50,7 @@ public class Question {
         this.name = builder.name;
         this.type = builder.type;
         this.classValue = builder.classValue;
+        this.position = builder.position;
     }
 
     public byte[] toBytes() {
@@ -54,10 +78,15 @@ public class Question {
         return buffer.flip().array();
     }
 
+    public int getPosition() {
+        return position;
+    }
+
     public static class QuestionBuilder {
         public String name;
         public int type;
         public int classValue;
+        private int position = 12;
 
         public QuestionBuilder name(String name) {
             this.name = name;
@@ -79,50 +108,47 @@ public class Question {
         }
 
         public Question from(byte[] data) {
-            int pos = 12; //start from header
-            pos = getName(data, pos);
-            pos = getType(data, ++pos);
-            pos = getClassValue(data, ++pos);
+            parseNameFromData(data);
+            parseTypeFromData(data);
+            parseClassFromData(data);
             return new Question(this);
         }
 
-        private int getClassValue(byte[] data, int pos) {
+        private void parseClassFromData(byte[] data) {
             ByteBuffer f = ByteBuffer.allocate(4);
             f.put((byte) 0x00);
             f.put((byte) 0x00);
-            f.put(data[pos++]);
-            f.put(data[pos]);
+            f.put(data[position++]);
+            f.put(data[position++]);
             f.flip();
             this.classValue = f.getInt();
-            return pos;
         }
 
-        private int getType(byte[] data, int pos) {
+        private void parseTypeFromData(byte[] data) {
             ByteBuffer f = ByteBuffer.allocate(4);
             f.put((byte) 0x00);
             f.put((byte) 0x00);
-            f.put(data[pos++]);
-            f.put(data[pos]);
+            f.put(data[position++]);
+            f.put(data[position++]);
             f.flip();
             this.type = f.getInt();
-            return pos;
         }
 
-        private int getName(byte[] data, int pos) {
+        private void parseNameFromData(byte[] data) {
             StringBuilder name = new StringBuilder();
-            while (pos < data.length) {
-                int length = data[pos++]; //first record is the length of the record
-                name.append(new String(data, pos, length, StandardCharsets.UTF_8));
-                pos += length;
-                length = data[pos++];
+            while (position < data.length) {
+                int length = data[position++]; //first record is the length of the record
+                name.append(new String(data, position, length, StandardCharsets.UTF_8));
+                position += length;
+                length = data[position++];
                 name.append(".");
-                name.append(new String(data, pos, length, StandardCharsets.UTF_8));
+                name.append(new String(data, position, length, StandardCharsets.UTF_8));
                 this.name = name.toString();
-                pos += length;
-                if (data[pos] == 0)
+                position += length;
+                if (data[position++] == 0) {
                     break;
+                }
             }
-            return pos;
         }
     }
 }

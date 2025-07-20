@@ -2,7 +2,9 @@ package ie.dacelonid.dns;
 
 import ie.dacelonid.dns.bitutils.BitReader;
 import ie.dacelonid.dns.bitutils.BitWriter;
+import ie.dacelonid.dns.structure.Answer;
 import ie.dacelonid.dns.structure.Header;
+import ie.dacelonid.dns.structure.Question;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,16 +35,18 @@ public class ServerTest {
     public void serverTest() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest();
         byte[] response = datagramPacket.getData();
-        BitReader reader = new BitReader(response);
-        byte[] headerBytes = new byte[12];
-        System.arraycopy(response, 0, headerBytes, 0, 12);
-        Header header = new Header.HeaderBuilder().from(headerBytes);
 
-        Header expectedHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).questionCount(1).build();
+        Header header = new Header.HeaderBuilder().from(response);
+        Header expectedHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).ansRecordCount(1).questionCount(1).build();
         assertEquals(expectedHeader, header);
 
+        Question expecteQuestion = new Question.QuestionBuilder().name("example.com").type(1).classValue(1).build();
+        Question question = new Question.QuestionBuilder().from(response);
+        assertEquals(expecteQuestion, question);
 
-
+        Answer expectedAnswer = new Answer.AnswerBuilder().name("example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
+        Answer answer = new Answer.AnswerBuilder().from(response);
+        assertEquals(expectedAnswer, answer);
     }
 
 

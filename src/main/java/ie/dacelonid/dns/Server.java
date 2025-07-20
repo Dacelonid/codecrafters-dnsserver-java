@@ -1,6 +1,7 @@
 package ie.dacelonid.dns;
 
 import ie.dacelonid.dns.bitutils.BitReader;
+import ie.dacelonid.dns.structure.Answer;
 import ie.dacelonid.dns.structure.Header;
 import ie.dacelonid.dns.structure.Question;
 
@@ -44,15 +45,20 @@ public class Server implements Runnable {
         Header requestheader = new Header.HeaderBuilder().from(data);
         System.out.println("Received data:\n" + requestheader);
 
+        final byte[] bufResponse = new byte[512];
+        Header responseHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).questionCount(1).ansRecordCount(1).build();
+
         Question requestQuestion = new Question.QuestionBuilder().from(data);
         Question responseQuestion = new Question.QuestionBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).build();
 
-        final byte[] bufResponse = new byte[512];
-        Header responseHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).questionCount(1).build();
+        Answer answerResponse = new Answer.AnswerBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build();
+
         byte[] headerBytes = responseHeader.tobytes();
         byte[] questionBytes = responseQuestion.toBytes();
+        byte[] answerBytes = answerResponse.toBytes();
         System.arraycopy(headerBytes, 0, bufResponse, 0, headerBytes.length);
         System.arraycopy(questionBytes, 0, bufResponse, headerBytes.length, questionBytes.length);
+        System.arraycopy(answerBytes, 0, bufResponse, headerBytes.length+questionBytes.length, answerBytes.length);
         final DatagramPacket packetResponse = new DatagramPacket(bufResponse, bufResponse.length, packet.getSocketAddress());
         try {
             serverSocket.send(packetResponse);
