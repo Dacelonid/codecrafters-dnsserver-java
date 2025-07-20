@@ -52,13 +52,21 @@ public class Answer {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try {
             String[] split = name.split("\\.");
-            byte[] sld = split[0].getBytes(StandardCharsets.UTF_8);
-            byte[] tld = split[1].getBytes(StandardCharsets.UTF_8);
-            output.write(sld.length);
-            output.write(sld);
-            output.write(tld.length);
-            output.write(tld);
+            for (String s : split) {
+                output.write(s.length());
+                output.write(s.getBytes(StandardCharsets.UTF_8));
+            }
             output.write(0x00);
+//
+//
+//            String[] split = name.split("\\.");
+//            byte[] sld = split[0].getBytes(StandardCharsets.UTF_8);
+//            byte[] tld = split[1].getBytes(StandardCharsets.UTF_8);
+//            output.write(sld.length);
+//            output.write(sld);
+//            output.write(tld.length);
+//            output.write(tld);
+//            output.write(0x00);
             output.write(intToBytes(type, 2));
             output.write(intToBytes(classValue, 2));
             output.write(intToBytes(timeToLive, 4));
@@ -200,18 +208,18 @@ public class Answer {
         private int parseNameFromData(byte[] data, int position) {
             StringBuilder name = new StringBuilder();
             while (position < data.length) {
-                int length = data[position++]; //first record is the length of the record
-                name.append(new String(data, position, length, StandardCharsets.UTF_8));
-                position += length;
-                length = data[position++];
-                name.append(".");
-                name.append(new String(data, position, length, StandardCharsets.UTF_8));
-                this.name = name.toString();
+                int length = data[position]; //first record is the length of the record
+                name.append(new String(data, position+1, length, StandardCharsets.UTF_8));
                 position += length;
                 if (data[position++] == 0) {
                     break;
+                }else{
+                    name.append(".");
                 }
+
             }
+            this.name = name.substring(0, name.length()-1);
+
             return position;
         }
     }

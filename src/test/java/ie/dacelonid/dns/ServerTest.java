@@ -40,11 +40,11 @@ public class ServerTest {
         Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
         assertEquals(expectedHeader, header);
 
-        Question expecteQuestion = new Question.QuestionBuilder().name("example.com").type(1).classValue(1).build();
+        Question expecteQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
         Question question = new Question.QuestionBuilder().from(response);
         assertEquals(expecteQuestion, question);
 
-        Answer expectedAnswer = new Answer.AnswerBuilder().name("example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
+        Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
         Answer answer = new Answer.AnswerBuilder().from(response);
         assertEquals(expectedAnswer, answer);
     }
@@ -52,7 +52,7 @@ public class ServerTest {
 
     public DatagramPacket sendDNSRequest() throws IOException {
         String dnsServer = "localhost";
-        String domain = "example.com";
+        String domain = "www.example.com";
 
         Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(1).recurDesired(1).build();
         // Build DNS request
