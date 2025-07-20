@@ -139,17 +139,35 @@ public class Question {
             StringJoiner name = new StringJoiner(".");
             while (position < data.length) {
                 int length = data[position++] & 0xFF; // read length and advance
-
                 if (length == 0) {
                     break; // null terminator indicates end of name
-                }else if(length == 192) { //compression
-                    System.out.println("compression ");
+                }else if((length & 192) == 192) { //compression
+                    int nextByte = data[position++] & 0xFF;
+                    int pointer = ((length & 0x3F) << 8) | nextByte;
+                    name.add(parseNameFromData(data, pointer));
+                    break;
                 }
 
                 name.add(new String(data, position, length, StandardCharsets.UTF_8));
                 position += length;
             }
             this.name = name.toString();
+        }
+
+
+        private String parseNameFromData(byte[] data, int offset) {
+            StringJoiner name = new StringJoiner(".");
+            while (offset < data.length) {
+                int length = data[offset++] & 0xFF; // read length and advance
+
+                if (length == 0) {
+                    break; // null terminator indicates end of name
+                }
+
+                name.add(new String(data, offset, length, StandardCharsets.UTF_8));
+                offset += length;
+            }
+            return name.toString();
         }
 
     }

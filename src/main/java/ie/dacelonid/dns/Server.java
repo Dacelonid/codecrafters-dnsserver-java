@@ -43,9 +43,9 @@ public class Server implements Runnable {
         byte[] data = packet.getData();
         final byte[] bufResponse = new byte[512];
         Header requestHeader = new Header.HeaderBuilder().from(data);
-        Header responseHeader = new Header.HeaderBuilder().packetID(requestHeader.getPacketID()).queryResponseID(1).questionCount(1).ansRecordCount(1).opCode(requestHeader.getOpCode()).recurDesired(requestHeader.getRecurDesired()).respCode(requestHeader.getOpCode() == 0 ? 0 : 4).questionCount(requestHeader.getQuestionCount()).build();
-
         int numQuestions = requestHeader.getQuestionCount();
+        Header responseHeader = new Header.HeaderBuilder().packetID(requestHeader.getPacketID()).queryResponseID(1).questionCount(numQuestions).ansRecordCount(numQuestions).opCode(requestHeader.getOpCode()).recurDesired(requestHeader.getRecurDesired()).respCode(requestHeader.getOpCode() == 0 ? 0 : 4).questionCount(requestHeader.getQuestionCount()).build();
+
         List<Question> questionsResponse = new ArrayList<>();
         List<Answer> answerResponses = new ArrayList<>();
 

@@ -30,32 +30,48 @@ public class ServerTest {
     public void tearDown() {
         server.stop();
     }
-
-    @Test
-    public void serverTest() throws Exception {
-        DatagramPacket datagramPacket = sendDNSRequest(false);
-        byte[] response = datagramPacket.getData();
-
-        Header header = new Header.HeaderBuilder().from(response);
-        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
-        assertEquals(expectedHeader, header);
-
-        Question expecteQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 1);
-        assertEquals(expecteQuestion, question);
-
-        Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, 0);
-        assertEquals(expectedAnswer, answer);
-    }
-
     @Test
     public void serverTestWithCompression() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest(true);
         byte[] response = datagramPacket.getData();
 
         Header header = new Header.HeaderBuilder().from(response);
-        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(3).recurDesired(1).build();
+        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
+        assertEquals(expectedHeader, header);
+
+        Question expectedQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
+        Question question = new Question.QuestionBuilder().from(response, 0);
+        assertEquals(expectedQuestion, question);
+
+        expectedQuestion = new Question.QuestionBuilder().name("www.example.org").type(1).classValue(1).build();
+        question = new Question.QuestionBuilder().from(response, 1);
+        assertEquals(expectedQuestion, question);
+
+        expectedQuestion = new Question.QuestionBuilder().name("www.somewhere.example.com").type(1).classValue(1).build();
+        question = new Question.QuestionBuilder().from(response, 2);
+        assertEquals(expectedQuestion, question);
+
+        Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
+        Answer answer = new Answer.AnswerBuilder().from(response, 0, 2);
+        assertEquals(expectedAnswer, answer);
+
+        expectedAnswer = new Answer.AnswerBuilder().name("www.example.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
+        answer = new Answer.AnswerBuilder().from(response, 1, 2);
+        assertEquals(expectedAnswer, answer);
+
+        expectedAnswer = new Answer.AnswerBuilder().name("www.somewhere.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
+        answer = new Answer.AnswerBuilder().from(response, 2, 2);
+        assertEquals(expectedAnswer, answer);
+    }
+    @Test
+
+
+    public void serverTestWithoutCompression() throws Exception {
+        DatagramPacket datagramPacket = sendDNSRequest(false);
+        byte[] response = datagramPacket.getData();
+
+        Header header = new Header.HeaderBuilder().from(response);
+        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
         assertEquals(expectedHeader, header);
 
         Question expectedQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
@@ -86,26 +102,15 @@ public class ServerTest {
 
     public DatagramPacket sendDNSRequest(boolean compression) throws IOException {
         String dnsServer = "localhost";
-        String domain = "www.example.com";
 
         ByteBuffer buffer = ByteBuffer.allocate(512);
         // Build DNS request
+        Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(3).recurDesired(1).build();
+        buffer.put(requestHeader.tobytes());
         if (compression) {
-            Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(3).recurDesired(1).build();
-            buffer.put(requestHeader.tobytes());
-            buffer.put(getuncompressedMultiplQuestion());
+            buffer.put(getCompressedQuestion());
         } else {
-            Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(1).recurDesired(1).build();
-            buffer.put(requestHeader.tobytes());
-            // Write domain name
-            for (String label : domain.split("\\.")) {
-                buffer.put((byte) label.length());
-                buffer.put(label.getBytes());
-            }
-            buffer.put((byte) 0); // Terminate name
-
-            buffer.putShort((short) 1); // QTYPE = A
-            buffer.putShort((short) 1); // QCLASS = IN
+            buffer.put(getuncompressedMultiplQuestion());
         }
         byte[] dnsQuery = new byte[buffer.position()];
         buffer.flip();
