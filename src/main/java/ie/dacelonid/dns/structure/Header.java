@@ -1,6 +1,10 @@
 package ie.dacelonid.dns.structure;
 
+import ie.dacelonid.dns.bitutils.BitReader;
 import ie.dacelonid.dns.bitutils.BitWriter;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 public class Header {
     private final int packetID;
@@ -17,6 +21,23 @@ public class Header {
     private final int authRecordCount;
     private final int additionalRecordCount;
     private byte[] header;
+
+    public Header(byte[] header) {
+        BitReader reader = new BitReader(header);
+        packetID = reader.readBits(16);
+        queryResponseID = reader.readBits(1);
+        opCode = reader.readBits(4);
+        authAns = reader.readBits(1);
+        trunc = reader.readBits(1);
+        recurDesired = reader.readBits(1);
+        recurAvail = reader.readBits(1);
+        reserved = reader.readBits(3);
+        respCode = reader.readBits(4);
+        questionCount = reader.readBits(16);
+        ansRecordCount = reader.readBits(16);
+        authRecordCount = reader.readBits(16);
+        additionalRecordCount = reader.readBits(16);
+    }
 
     public byte[] tobytes() {
         if (header == null) {
@@ -53,6 +74,36 @@ public class Header {
         ansRecordCount = builder.ansRecordCount;
         authRecordCount = builder.authRecordCount;
         additionalRecordCount = builder.additionalRecordCount;
+    }
+
+    @Override
+    public String toString() {
+        return "Header{" +
+                "packetID=" + packetID +
+                ", queryResponseID=" + queryResponseID +
+                ", opCode=" + opCode +
+                ", authAns=" + authAns +
+                ", trunc=" + trunc +
+                ", recurDesired=" + recurDesired +
+                ", recurAvail=" + recurAvail +
+                ", reserved=" + reserved +
+                ", respCode=" + respCode +
+                ", questionCount=" + questionCount +
+                ", ansRecordCount=" + ansRecordCount +
+                ", authRecordCount=" + authRecordCount +
+                ", additionalRecordCount=" + additionalRecordCount +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Header header)) return false;
+        return packetID == header.packetID && queryResponseID == header.queryResponseID && opCode == header.opCode && authAns == header.authAns && trunc == header.trunc && recurDesired == header.recurDesired && recurAvail == header.recurAvail && reserved == header.reserved && respCode == header.respCode && questionCount == header.questionCount && ansRecordCount == header.ansRecordCount && authRecordCount == header.authRecordCount && additionalRecordCount == header.additionalRecordCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(packetID, queryResponseID, opCode, authAns, trunc, recurDesired, recurAvail, reserved, respCode, questionCount, ansRecordCount, authRecordCount, additionalRecordCount);
     }
 
     public static class HeaderBuilder {
@@ -139,5 +190,10 @@ public class Header {
             return new Header(this);
         }
 
+        public Header from(byte[] data) {
+            byte[] header = new byte[12];
+            System.arraycopy(data, 0, header, 0, 12);
+            return new Header(header);
+        }
     }
 }

@@ -1,6 +1,8 @@
 package ie.dacelonid.dns;
 
 import ie.dacelonid.dns.bitutils.BitReader;
+import ie.dacelonid.dns.bitutils.BitWriter;
+import ie.dacelonid.dns.structure.Header;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,11 +32,16 @@ public class ServerTest {
     @Test
     public void serverTest() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest();
-        System.out.println(datagramPacket);
         byte[] response = datagramPacket.getData();
         BitReader reader = new BitReader(response);
-        assertEquals(1234,reader.readBits(16));
-        assertEquals(1, reader.readBits(1));
+        byte[] headerBytes = new byte[12];
+        System.arraycopy(response, 0, headerBytes, 0, 12);
+        Header header = new Header.HeaderBuilder().from(headerBytes);
+
+        Header expectedHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).questionCount(1).build();
+        assertEquals(expectedHeader, header);
+
+
 
     }
 
@@ -43,14 +50,10 @@ public class ServerTest {
         String dnsServer = "localhost";
         String domain = "example.com";
 
+        Header requestHeader = new Header.HeaderBuilder().packetID(1234).questionCount(1).recurDesired(1).build();
         // Build DNS request
         ByteBuffer buffer = ByteBuffer.allocate(512);
-        buffer.putShort((short) 0x1234); // ID
-        buffer.putShort((short) 0x0100); // Standard query
-        buffer.putShort((short) 1);      // QDCOUNT
-        buffer.putShort((short) 0);      // ANCOUNT
-        buffer.putShort((short) 0);      // NSCOUNT
-        buffer.putShort((short) 0);      // ARCOUNT
+        buffer.put(requestHeader.tobytes());
 
         // Write domain name
         for (String label : domain.split("\\.")) {
