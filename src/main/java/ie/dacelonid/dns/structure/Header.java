@@ -20,7 +20,50 @@ public class Header {
     private final int ansRecordCount;
     private final int authRecordCount;
     private final int additionalRecordCount;
-    private byte[] header;
+
+    public int getQueryResponseID() {
+        return queryResponseID;
+    }
+
+    public int getAuthAns() {
+        return authAns;
+    }
+
+    public int getTrunc() {
+        return trunc;
+    }
+
+    public int getRecurDesired() {
+        return recurDesired;
+    }
+
+    public int getRecurAvail() {
+        return recurAvail;
+    }
+
+    public int getReserved() {
+        return reserved;
+    }
+
+    public int getRespCode() {
+        return respCode;
+    }
+
+    public int getQuestionCount() {
+        return questionCount;
+    }
+
+    public int getAnsRecordCount() {
+        return ansRecordCount;
+    }
+
+    public int getAuthRecordCount() {
+        return authRecordCount;
+    }
+
+    public int getAdditionalRecordCount() {
+        return additionalRecordCount;
+    }
 
     public Header(byte[] header) {
         BitReader reader = new BitReader(header);
@@ -40,7 +83,6 @@ public class Header {
     }
 
     public byte[] tobytes() {
-        if (header == null) {
             BitWriter writer = new BitWriter(12);
             writer.writeBits(packetID, 16);
             writer.writeBits(queryResponseID, 1);
@@ -55,9 +97,7 @@ public class Header {
             writer.writeBits(ansRecordCount, 16);
             writer.writeBits(authRecordCount, 16);
             writer.writeBits(additionalRecordCount, 16);
-            header = writer.getBytes();
-        }
-        return header;
+            return writer.getBytes();
     }
 
     private Header(HeaderBuilder builder) {
@@ -104,6 +144,14 @@ public class Header {
     @Override
     public int hashCode() {
         return Objects.hash(packetID, queryResponseID, opCode, authAns, trunc, recurDesired, recurAvail, reserved, respCode, questionCount, ansRecordCount, authRecordCount, additionalRecordCount);
+    }
+
+    public int getPacketID() {
+        return packetID;
+    }
+
+    public int getOpCode() {
+        return opCode;
     }
 
     public static class HeaderBuilder {

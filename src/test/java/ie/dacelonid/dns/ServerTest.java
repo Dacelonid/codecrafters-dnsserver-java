@@ -37,7 +37,7 @@ public class ServerTest {
         byte[] response = datagramPacket.getData();
 
         Header header = new Header.HeaderBuilder().from(response);
-        Header expectedHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).ansRecordCount(1).questionCount(1).build();
+        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
         assertEquals(expectedHeader, header);
 
         Question expecteQuestion = new Question.QuestionBuilder().name("example.com").type(1).classValue(1).build();
@@ -54,7 +54,7 @@ public class ServerTest {
         String dnsServer = "localhost";
         String domain = "example.com";
 
-        Header requestHeader = new Header.HeaderBuilder().packetID(1234).questionCount(1).recurDesired(1).build();
+        Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(1).recurDesired(1).build();
         // Build DNS request
         ByteBuffer buffer = ByteBuffer.allocate(512);
         buffer.put(requestHeader.tobytes());

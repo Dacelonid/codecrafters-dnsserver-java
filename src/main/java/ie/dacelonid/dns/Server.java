@@ -42,11 +42,9 @@ public class Server implements Runnable {
 
     private void handleClient(DatagramPacket packet) {
         byte[] data = packet.getData();
-        Header requestheader = new Header.HeaderBuilder().from(data);
-        System.out.println("Received data:\n" + requestheader);
-
         final byte[] bufResponse = new byte[512];
-        Header responseHeader = new Header.HeaderBuilder().packetID(1234).queryResponseID(1).questionCount(1).ansRecordCount(1).build();
+        Header requestHeader = new Header.HeaderBuilder().from(data);
+        Header responseHeader = new Header.HeaderBuilder().packetID(requestHeader.getPacketID()).queryResponseID(1).questionCount(1).ansRecordCount(1).opCode(requestHeader.getOpCode()).recurDesired(requestHeader.getRecurDesired()).respCode(requestHeader.getOpCode() ==0?0:4).questionCount(requestHeader.getQuestionCount()).build();
 
         Question requestQuestion = new Question.QuestionBuilder().from(data);
         Question responseQuestion = new Question.QuestionBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).build();
