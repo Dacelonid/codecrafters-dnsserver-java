@@ -121,6 +121,13 @@ public class ServerTest {
         socket.setSoTimeout(2000);
         InetAddress address = InetAddress.getByName(dnsServer);
         DatagramPacket request = new DatagramPacket(dnsQuery, dnsQuery.length, address, 2053);
+
+        // Small delay before send to ensure server is ready
+        try {
+            Thread.sleep(250); // 250ms should suffice
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupt flag
+        }
         socket.send(request);
         byte[] response = new byte[512];
         DatagramPacket reply = new DatagramPacket(response, response.length);
