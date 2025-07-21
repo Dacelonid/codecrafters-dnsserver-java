@@ -9,7 +9,7 @@ import java.util.List;
 public class DNSMessage {
     private final Header header;
     private final List<Question> questions;
-    private List<Answer> answers;
+    private final List<Answer> answers;
 
     private DNSMessage(byte[] data) {
         header = new Header.HeaderBuilder().from(data);
@@ -25,28 +25,18 @@ public class DNSMessage {
         header = new Header.HeaderBuilder().fromRequest(request);
         questions = new ArrayList<>();
         answers = new ArrayList<>();
-        for (Question requestQuestion : request.getQuestions()) {
+        for (Question requestQuestion : request.questions) {
             questions.add(new Question.QuestionBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).build());
             Answer build = new Answer.AnswerBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build();
             answers.add(build);
         }
-
     }
 
     public static DNSMessage from(DNSMessage request) {
         return new DNSMessage(request);
     }
 
-    public List<Question> getQuestions() {
-        return questions;
-    }
-
-    public List<Answer> getAnswers() {
-        return answers;
-    }
-
     public static DNSMessage from(byte[] data) {
-
         return new DNSMessage(data);
     }
 

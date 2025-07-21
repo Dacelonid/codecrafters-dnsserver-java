@@ -5,6 +5,7 @@ import ie.dacelonid.dns.structure.DNSMessage;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,16 +38,17 @@ public class Server implements Runnable {
     private void handleClient(DatagramPacket packet) {
         DNSMessage request = DNSMessage.from(packet.getData());
         DNSMessage response = DNSMessage.from(request);
+        sendResponse(response, packet.getSocketAddress());
+    }
 
+    private void sendResponse(DNSMessage response, SocketAddress replyAddress) {
         byte[] bytes = response.tobytes();
-
-        final DatagramPacket packetResponse = new DatagramPacket(bytes, bytes.length, packet.getSocketAddress());
+        final DatagramPacket packetResponse = new DatagramPacket(bytes, bytes.length, replyAddress);
         try {
             serverSocket.send(packetResponse);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
 
