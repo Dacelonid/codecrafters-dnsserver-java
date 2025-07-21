@@ -30,9 +30,10 @@ public class ServerTest {
     public void tearDown() {
         server.stop();
     }
+
     @Test
     public void serverTestWithCompression() throws Exception {
-        DatagramPacket datagramPacket = sendDNSRequest(true);
+        DatagramPacket datagramPacket = sendDNSRequest(getCompressedQuestion(), 3);
         byte[] response = datagramPacket.getData();
 
         Header header = new Header.HeaderBuilder().from(response);
@@ -52,22 +53,23 @@ public class ServerTest {
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, 2);
+        Answer answer = new Answer.AnswerBuilder().from(response, 0, 3);
         assertEquals(expectedAnswer, answer);
 
         expectedAnswer = new Answer.AnswerBuilder().name("www.example.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 1, 2);
+        answer = new Answer.AnswerBuilder().from(response, 1, 3);
         assertEquals(expectedAnswer, answer);
 
         expectedAnswer = new Answer.AnswerBuilder().name("www.somewhere.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 2, 2);
+        answer = new Answer.AnswerBuilder().from(response, 2, 3);
         assertEquals(expectedAnswer, answer);
     }
+
     @Test
 
 
     public void serverTestWithoutCompression() throws Exception {
-        DatagramPacket datagramPacket = sendDNSRequest(false);
+        DatagramPacket datagramPacket = sendDNSRequest(getuncompressedMultiplQuestion(), 3);
         byte[] response = datagramPacket.getData();
 
         Header header = new Header.HeaderBuilder().from(response);
@@ -87,31 +89,53 @@ public class ServerTest {
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, 2);
+        Answer answer = new Answer.AnswerBuilder().from(response, 0, 3);
         assertEquals(expectedAnswer, answer);
 
         expectedAnswer = new Answer.AnswerBuilder().name("www.example.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 1, 2);
+        answer = new Answer.AnswerBuilder().from(response, 1, 3);
         assertEquals(expectedAnswer, answer);
 
         expectedAnswer = new Answer.AnswerBuilder().name("www.somewhere.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 2, 2);
+        answer = new Answer.AnswerBuilder().from(response, 2, 3);
+        assertEquals(expectedAnswer, answer);
+    }
+
+    @Test
+
+
+    public void serverForwardingTest() throws Exception {
+        server.stop();
+        Thread.sleep(100);
+
+        Thread t = new Thread(new Server(2053, "8.8.8.8", "53"));
+        t.start();
+
+        DatagramPacket datagramPacket = sendDNSRequest(getRemoteIPQuestion(), 1);
+        byte[] response = datagramPacket.getData();
+
+        Header header = new Header.HeaderBuilder().from(response);
+        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
+        assertEquals(expectedHeader, header);
+
+        Question expectedQuestion = new Question.QuestionBuilder().name("codecrafters.io").type(1).classValue(1).build();
+        Question question = new Question.QuestionBuilder().from(response, 0);
+        assertEquals(expectedQuestion, question);
+
+        Answer expectedAnswer = new Answer.AnswerBuilder().name("codecrafters.io").type(1).classValue(1).length(4).data("76.76.21.21").build();
+        Answer answer = new Answer.AnswerBuilder().from(response, 0, 1);
         assertEquals(expectedAnswer, answer);
     }
 
 
-    public DatagramPacket sendDNSRequest(boolean compression) throws IOException {
+    public DatagramPacket sendDNSRequest(byte[] data, int questionCount) throws IOException {
         String dnsServer = "localhost";
 
         ByteBuffer buffer = ByteBuffer.allocate(512);
         // Build DNS request
-        Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(3).recurDesired(1).build();
+        Header requestHeader = new Header.HeaderBuilder().packetID(5878).questionCount(questionCount).recurDesired(1).build();
         buffer.put(requestHeader.tobytes());
-        if (compression) {
-            buffer.put(getCompressedQuestion());
-        } else {
-            buffer.put(getuncompressedMultiplQuestion());
-        }
+        buffer.put(data);
         byte[] dnsQuery = new byte[buffer.position()];
         buffer.flip();
         buffer.get(dnsQuery);
@@ -189,6 +213,17 @@ public class ServerTest {
                 0x00,
                 0x00, 0x01,       // QTYPE = A
                 0x00, 0x01        // QCLASS = IN
+        };
+
+    }
+    private byte[] getRemoteIPQuestion() {
+        return new byte[]{
+                // Question 1: www.example.com
+                0x0C, 'c', 'o', 'd', 'e', 'c', 'r', 'a', 'f', 't', 'e', 'r', 's',
+                0x02, 'i', 'o',
+                0x00,
+                0x00, 0x01,       // QTYPE = A
+                0x00, 0x01       // QCLASS = IN
         };
 
     }

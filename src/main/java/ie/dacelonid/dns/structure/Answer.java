@@ -12,7 +12,7 @@ public class Answer {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Answer answer)) return false;
-        return length == answer.length && classValue == answer.classValue && timeToLive == answer.timeToLive && data == answer.data && type == answer.type && Objects.equals(name, answer.name);
+        return length == answer.length && classValue == answer.classValue &&  data == answer.data && type == answer.type && Objects.equals(name, answer.name);
     }
 
     @Override
@@ -133,8 +133,20 @@ public class Answer {
         }
 
         public Answer from(byte[] data, int whichAnswer, int totalQuestions) {
-            Question question = new Question.QuestionBuilder().from(data, totalQuestions);//skip the Question part
+            Question question = new Question.QuestionBuilder().from(data, totalQuestions-1);//skip the Question part
             int position = question.getPosition();
+            for (int x = 0; x <= whichAnswer; x++) {
+                position = parseNameFromData(data, position);
+                position = parseTypeFromData(data, position);
+                position = parseClassFromData(data, position);
+                position = parseTimeToLiveFromData(data, position);
+                position = parseLengthFromData(data, position);
+                position = parseDataFromData(data, position);
+            }
+            return new Answer(this);
+        }
+
+        public Answer froma(byte[] data, int whichAnswer, int position) {
             for (int x = 0; x <= whichAnswer; x++) {
                 position = parseNameFromData(data, position);
                 position = parseTypeFromData(data, position);
@@ -204,7 +216,14 @@ public class Answer {
         private int parseNameFromData(byte[] data, int position) {
             StringJoiner name = new StringJoiner(".");
             while (position < data.length) {
+
                 int length = data[position++] & 0xFF; // read length and advance
+                if((length & 192) == 192) { //compression
+                    int nextByte = data[position++] & 0xFF;
+                    int pointer = ((length & 0x3F) << 8) | nextByte;
+                    name.add(parseNameFromDataa(data, pointer));
+                    break;
+                }
 
                 if (length == 0) {
                     break; // null terminator indicates end of name
@@ -215,6 +234,21 @@ public class Answer {
             }
             this.name = name.toString();
             return position;
+        }
+
+        private String parseNameFromDataa(byte[] data, int offset) {
+            StringJoiner name = new StringJoiner(".");
+            while (offset < data.length) {
+                int length = data[offset++] & 0xFF; // read length and advance
+
+                if (length == 0) {
+                    break; // null terminator indicates end of name
+                }
+
+                name.add(new String(data, offset, length, StandardCharsets.UTF_8));
+                offset += length;
+            }
+            return name.toString();
         }
 
     }
