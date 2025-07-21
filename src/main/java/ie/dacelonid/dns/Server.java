@@ -1,6 +1,7 @@
 package ie.dacelonid.dns;
 
 import ie.dacelonid.dns.structure.Answer;
+import ie.dacelonid.dns.structure.DNSMessage;
 import ie.dacelonid.dns.structure.Header;
 import ie.dacelonid.dns.structure.Question;
 
@@ -40,17 +41,15 @@ public class Server implements Runnable {
     }
 
     private void handleClient(DatagramPacket packet) {
-        byte[] data = packet.getData();
-        final byte[] bufResponse = new byte[512];
-        Header requestHeader = new Header.HeaderBuilder().from(data);
-        int numQuestions = requestHeader.getQuestionCount();
-        Header responseHeader = new Header.HeaderBuilder().packetID(requestHeader.getPacketID()).queryResponseID(1).questionCount(numQuestions).ansRecordCount(numQuestions).opCode(requestHeader.getOpCode()).recurDesired(requestHeader.getRecurDesired()).respCode(requestHeader.getOpCode() == 0 ? 0 : 4).questionCount(requestHeader.getQuestionCount()).build();
+        DNSMessage request = DNSMessage.from(packet.getData());
+
+        Header responseHeader = new Header.HeaderBuilder().fromRequest(request);
 
         List<Question> questionsResponse = new ArrayList<>();
         List<Answer> answerResponses = new ArrayList<>();
 
-        for (int x = 0; x < numQuestions; x++) {
-            Question requestQuestion = new Question.QuestionBuilder().from(data, x);
+
+        for (Question requestQuestion:request.getQuestions()) {
             questionsResponse.add(new Question.QuestionBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).build());
             Answer build = new Answer.AnswerBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build();
             answerResponses.add(build);
@@ -61,6 +60,7 @@ public class Server implements Runnable {
         byte[] questionBytes = getQuestionBytes(questionsResponse);
         byte[] answerBytes = getBytes(answerResponses);
 
+        final byte[] bufResponse = new byte[512];
         System.arraycopy(headerBytes, 0, bufResponse, 0, headerBytes.length);
         System.arraycopy(questionBytes, 0, bufResponse, headerBytes.length, questionBytes.length);
         System.arraycopy(answerBytes, 0, bufResponse, headerBytes.length + questionBytes.length, answerBytes.length);

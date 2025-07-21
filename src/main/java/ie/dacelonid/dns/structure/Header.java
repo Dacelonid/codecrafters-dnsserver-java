@@ -243,5 +243,15 @@ public class Header {
             System.arraycopy(data, 0, header, 0, 12);
             return new Header(header);
         }
+
+        public Header fromRequest(DNSMessage request) {
+            Header requestHeader = request.getHeader();
+            return new HeaderBuilder().packetID(requestHeader.getPacketID())
+                    .queryResponseID(1).questionCount(requestHeader.questionCount)
+                    .ansRecordCount(requestHeader.questionCount).opCode(requestHeader.getOpCode())
+                    .recurDesired(requestHeader.getRecurDesired())
+                    .respCode(requestHeader.getOpCode() == 0 ? 0 : 4)
+                    .questionCount(requestHeader.getQuestionCount()).build();
+        }
     }
 }
