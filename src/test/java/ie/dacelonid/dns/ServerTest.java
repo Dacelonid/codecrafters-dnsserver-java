@@ -1,17 +1,19 @@
 package ie.dacelonid.dns;
 
 import ie.dacelonid.dns.structure.Answer;
+import ie.dacelonid.dns.structure.DNSMessage;
 import ie.dacelonid.dns.structure.Header;
 import ie.dacelonid.dns.structure.Question;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,33 +38,20 @@ public class ServerTest {
         DatagramPacket datagramPacket = sendDNSRequest(getCompressedQuestion(), 3);
         byte[] response = datagramPacket.getData();
 
-        Header header = new Header.HeaderBuilder().from(response);
+        DNSMessage actualResponse = DNSMessage.from(response);
         Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
-        assertEquals(expectedHeader, header);
+        assertEquals(expectedHeader, actualResponse.getHeader());
+        List<Question> expectedQuestions = new ArrayList<>();
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build());
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build());
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build());
+        assertEquals(expectedQuestions, actualResponse.getQuestions());
 
-        Question expectedQuestion = new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 1);
-        assertEquals(expectedQuestion, question);
-
-        expectedQuestion = new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 2);
-        assertEquals(expectedQuestion, question);
-
-        expectedQuestion = new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 3);
-        assertEquals(expectedQuestion, question);
-
-        Answer expectedAnswer = new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, question.getPosition());
-        assertEquals(expectedAnswer, answer);
-
-        expectedAnswer = new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 1, question.getPosition());
-        assertEquals(expectedAnswer, answer);
-
-        expectedAnswer = new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 2, question.getPosition());
-        assertEquals(expectedAnswer, answer);
+        List<Answer> expectedAnswers = new ArrayList<>();
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        assertEquals(expectedAnswers, actualResponse.getAnswers());
     }
 
     @Test
@@ -72,63 +61,45 @@ public class ServerTest {
         DatagramPacket datagramPacket = sendDNSRequest(getuncompressedMultiplQuestion(), 3);
         byte[] response = datagramPacket.getData();
 
-        Header header = new Header.HeaderBuilder().from(response);
+        DNSMessage actualResponse = DNSMessage.from(response);
         Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
-        assertEquals(expectedHeader, header);
+        assertEquals(expectedHeader, actualResponse.getHeader());
+        List<Question> expectedQuestions = new ArrayList<>();
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build());
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build());
+        expectedQuestions.add(new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build());
+        assertEquals(expectedQuestions, actualResponse.getQuestions());
 
-        Question expectedQuestion = new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 1);
-        assertEquals(expectedQuestion, question);
-
-        expectedQuestion = new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 2);
-        assertEquals(expectedQuestion, question);
-
-        expectedQuestion = new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 3);
-        assertEquals(expectedQuestion, question);
-
-        Answer expectedAnswer = new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, question.getPosition());
-        assertEquals(expectedAnswer, answer);
-
-        expectedAnswer = new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 1, question.getPosition());
-        assertEquals(expectedAnswer, answer);
-
-        expectedAnswer = new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
-        answer = new Answer.AnswerBuilder().from(response, 2, question.getPosition());
-        assertEquals(expectedAnswer, answer);
+        List<Answer> expectedAnswers = new ArrayList<>();
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expectedAnswers.add(new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        assertEquals(expectedAnswers, actualResponse.getAnswers());
     }
 
     @Test
 
 
     public void serverForwardingTest() throws Exception {
-//        server.stop();
-//        Thread.sleep(100);
-//
-//        Thread t = new Thread(new Server(2053, "8.8.8.8", "53"));
-//        t.start();
-//
         DatagramPacket datagramPacket = sendDNSRequest(getRemoteIPQuestion(), 1);
         byte[] response = datagramPacket.getData();
+        DNSMessage actualResponse = DNSMessage.from(response);
 
-        Header header = new Header.HeaderBuilder().from(response);
+        Header header = actualResponse.getHeader();
         Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
         assertEquals(expectedHeader, header);
 
         Question expectedQuestion = new Question.QuestionBuilder().name("codecrafters.io").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 1);
+        Question question = actualResponse.getQuestions().getFirst();
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("codecrafters.io").type(1).classValue(1).length(4).data("76.76.21.21").build();
-        Answer answer = new Answer.AnswerBuilder().from(response, 0, question.getPosition());
+        Answer answer = actualResponse.getAnswers().getFirst();
         assertEquals(expectedAnswer, answer);
     }
 
 
-    public DatagramPacket sendDNSRequest(byte[] data, int questionCount) throws IOException {
+    public DatagramPacket sendDNSRequest(byte[] data, int questionCount) throws Exception {
         String dnsServer = "localhost";
 
         ByteBuffer buffer = ByteBuffer.allocate(512);
@@ -141,21 +112,19 @@ public class ServerTest {
         buffer.get(dnsQuery);
 
         // Send via UDP
-        DatagramSocket socket = new DatagramSocket();
-        socket.setSoTimeout(2000);
-        InetAddress address = InetAddress.getByName(dnsServer);
-        DatagramPacket request = new DatagramPacket(dnsQuery, dnsQuery.length, address, 2053);
+        DatagramPacket reply;
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.setSoTimeout(2000);
+            InetAddress address = InetAddress.getByName(dnsServer);
+            DatagramPacket request = new DatagramPacket(dnsQuery, dnsQuery.length, address, 2053);
 
-        // Small delay before send to ensure server is ready
-        try {
+            // Small delay before send to ensure server is ready
             Thread.sleep(250); // 250ms should suffice
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // Restore interrupt flag
+            socket.send(request);
+            byte[] response = new byte[512];
+            reply = new DatagramPacket(response, response.length);
+            socket.receive(reply);
         }
-        socket.send(request);
-        byte[] response = new byte[512];
-        DatagramPacket reply = new DatagramPacket(response, response.length);
-        socket.receive(reply);
 
         return reply;
     }

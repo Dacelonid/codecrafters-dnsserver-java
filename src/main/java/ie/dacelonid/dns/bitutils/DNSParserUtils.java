@@ -8,14 +8,14 @@ public class DNSParserUtils {
 
     public static int readUInt16(byte[] data, int position) {
         return ((data[position++] & 0xFF) << 8) |
-                (data[position++] & 0xFF);
+                (data[position] & 0xFF);
     }
 
     public static int readUInt32(byte[] data, int position) {
         return ((data[position++] & 0xFF) << 24) |
                 ((data[position++] & 0xFF) << 16) |
                 ((data[position++] & 0xFF) << 8)  |
-                (data[position++] & 0xFF);
+                (data[position] & 0xFF);
     }
 
     public static NameParseResult parseName(byte[] data, int position) {

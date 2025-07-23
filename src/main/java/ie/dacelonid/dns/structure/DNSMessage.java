@@ -23,15 +23,12 @@ public class DNSMessage {
         header = new Header.HeaderBuilder().from(data);
         questions = new ArrayList<>();
         answers = new ArrayList<>();
-        for (int x = 1; x <= header.getQuestionCount(); x++) {
-            questions.add(new Question.QuestionBuilder().from(data, x));
+        for (int questionNumber = 1; questionNumber <= header.getQuestionCount(); questionNumber++) {
+            questions.add(new Question.QuestionBuilder().from(data, questionNumber, 12).build());
         }
         if (header.getAnsRecordCount() > 0) {
-            for (int x = 0; x < header.getQuestionCount(); x++) {
-                int position = 0;
-                for (Question question : questions)
-                    position = question.getPosition();
-                answers.add(new Answer.AnswerBuilder().from(data, x, position));
+            for (int answerNumber = 0; answerNumber < header.getAnsRecordCount(); answerNumber++) {
+                answers.add(new Answer.AnswerBuilder().from(data, answerNumber, questions.getLast().getPosition()).build());
             }
         }
     }
