@@ -19,12 +19,8 @@ public class Server implements Runnable {
     private boolean keepRunning = true;
     private DatagramSocket serverSocket;
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
-    private String ip;
-    private int port;
-
-    public Server(int serverPort) {
-        this.serverPort = serverPort;
-    }
+    private final String ip;
+    private final int port;
 
     public Server(int serverPort, String ip, String port) {
         this.serverPort = serverPort;
@@ -52,7 +48,7 @@ public class Server implements Runnable {
         DNSMessage request = DNSMessage.from(packet.getData());
         DNSMessage response = DNSMessage.from(request);
         for (Question question : response.getQuestions()) {
-            //For each quetion figure out if to handle the response or to forward
+            //For each question figure out if to handle the response or to forward
             if (ip != null && port != 0) {
                 response.addAnswer(getResponses(request.getHeader().getPacketID(), question));
             } else {

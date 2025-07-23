@@ -83,9 +83,9 @@ public class Answer extends DNSPart {
             return new Answer(this);
         }
 
-        public AnswerBuilder from(byte[] data, int whichAnswer, int position) {
-            DataCursor cursor = new DataCursor(data, position);
-
+        public AnswerBuilder from(byte[] data, int whichAnswer, int numberOfQuestions) {
+            DataCursor cursor = new DataCursor(data);
+            cursor.skipQuestions(numberOfQuestions);
             for (int i = 0; i < whichAnswer; i++) {
                 cursor.skipAnswer();
             }

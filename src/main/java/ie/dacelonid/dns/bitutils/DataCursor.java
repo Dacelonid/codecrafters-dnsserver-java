@@ -1,14 +1,12 @@
 package ie.dacelonid.dns.bitutils;
 
-import java.util.Arrays;
-
 public class DataCursor {
     private final byte[] data;
     private int position;
 
-    public DataCursor(byte[] data, int startPosition) {
+    public DataCursor(byte[] data) {
         this.data = data;
-        this.position = startPosition;
+        this.position = 0;
     }
 
     public int getPosition() {
@@ -24,12 +22,6 @@ public class DataCursor {
     public void skipName() {
         DNSParserUtils.NameParseResult result = DNSParserUtils.parseName(data, position);
         position = result.position(); // don't store name
-    }
-
-    public byte[] readBytes(int length) {
-        byte[] result = Arrays.copyOfRange(data, position, position + length);
-        position += length;
-        return result;
     }
 
     public int readUInt16() {
@@ -50,6 +42,20 @@ public class DataCursor {
     public void skipQuestion() {
         skipName();
         skipBytes(4); // QTYPE (2) + QCLASS (2)
+    }
+
+    public void skipQuestions(int numberOfQuestions) {
+        if(position == 0){
+            skipHeader();
+        }
+        for (int x = 0; x < numberOfQuestions; x++) {
+            skipName();
+            skipBytes(4); // QTYPE (2) + QCLASS (2)
+        }
+    }
+
+    public void skipHeader() {
+        skipBytes(12);
     }
 
     public void skipAnswer() {

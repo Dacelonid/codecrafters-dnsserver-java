@@ -24,11 +24,11 @@ public class DNSMessage {
         questions = new ArrayList<>();
         answers = new ArrayList<>();
         for (int questionNumber = 1; questionNumber <= header.getQuestionCount(); questionNumber++) {
-            questions.add(new Question.QuestionBuilder().from(data, questionNumber, 12).build());
+            questions.add(new Question.QuestionBuilder().from(data, questionNumber).build());
         }
         if (header.getAnsRecordCount() > 0) {
             for (int answerNumber = 0; answerNumber < header.getAnsRecordCount(); answerNumber++) {
-                answers.add(new Answer.AnswerBuilder().from(data, answerNumber, questions.getLast().getPosition()).build());
+                answers.add(new Answer.AnswerBuilder().from(data, answerNumber, header.getQuestionCount()).build());
             }
         }
     }
