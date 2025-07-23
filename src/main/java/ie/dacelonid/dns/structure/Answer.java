@@ -1,22 +1,18 @@
 package ie.dacelonid.dns.structure;
 
 
-import ie.dacelonid.dns.bitutils.DNSParserUtils;
+import ie.dacelonid.dns.bitutils.DataCursor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static ie.dacelonid.dns.bitutils.DNSParserUtils.*;
+import static ie.dacelonid.dns.bitutils.DNSParserUtils.intToBytes;
 
-public class Answer implements DNSPart {
-    private final String name;
+public class Answer extends DNSPart {
     private final int length;
-    private final int classValue;
     private final int timeToLive;
     private final int data;
-    private final int type;
 
     public Answer(AnswerBuilder answerBuilder) {
         this.name = answerBuilder.name;
@@ -27,19 +23,10 @@ public class Answer implements DNSPart {
         this.data = answerBuilder.data;
     }
 
-
-    public byte[] toBytes() {
+    @Override
+    protected byte[] additionalInfo() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try {
-            String[] split = name.split("\\.");
-            for (String s : split) {
-                output.write(s.length());
-                output.write(s.getBytes(StandardCharsets.UTF_8));
-            }
-            output.write(0x00);
-
-            output.write(intToBytes(type, 2));
-            output.write(intToBytes(classValue, 2));
             output.write(intToBytes(timeToLive, 4));
             output.write(intToBytes(length, 2));
             output.write(intToBytes(data, 4));
@@ -56,6 +43,7 @@ public class Answer implements DNSPart {
         private int classValue;
         private int timeToLive;
         private int data;
+
         public AnswerBuilder name(String name) {
             this.name = name;
             return this;
@@ -95,23 +83,21 @@ public class Answer implements DNSPart {
             return new Answer(this);
         }
 
-        public Answer from(byte[] data, int whichAnswer, int position) {
-            for (int x = 0; x <= whichAnswer; x++) {
-                DNSParserUtils.NameParseResult result = DNSParserUtils.parseName(data, position);
-                this.name = result.name();
-                position = result.position();
-                this.type = readUInt16(data, position);
-                position += 2;
-                this.classValue = readUInt16(data, position);
-                position += 2;
-                this.timeToLive = readUInt32(data, position);
-                position += 4;
-                this.length = readUInt16(data, position);
-                position += 2;
-                this.data = readUInt32(data, position);
-                position += 4;
+        public AnswerBuilder from(byte[] data, int whichAnswer, int position) {
+            DataCursor cursor = new DataCursor(data, position);
+
+            for (int i = 0; i < whichAnswer; i++) {
+                cursor.skipAnswer();
             }
-            return new Answer(this);
+            this.name = cursor.readName();
+            this.type = cursor.readUInt16();
+            this.classValue = cursor.readUInt16();
+            this.timeToLive = cursor.readUInt32();
+            this.length = cursor.readUInt16();
+            this.data = cursor.readUInt32();
+
+            return this;
+
         }
     }
 

@@ -1,19 +1,38 @@
 package ie.dacelonid.dns.structure;
 
 import ie.dacelonid.dns.bitutils.DNSParserUtils;
+import ie.dacelonid.dns.bitutils.DataCursor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static ie.dacelonid.dns.bitutils.DNSParserUtils.intToBytes;
 import static ie.dacelonid.dns.bitutils.DNSParserUtils.readUInt16;
 
-public class Question implements DNSPart {
+public class Question extends DNSPart {
 
     private final int position;
+
+    public int getPosition() {
+        return position;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public int getClassValue() {
+        return classValue;
+    }
+
+    private Question(QuestionBuilder builder) {
+        this.name = builder.name;
+        this.type = builder.type;
+        this.classValue = builder.classValue;
+        this.position = builder.position;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -35,48 +54,9 @@ public class Question implements DNSPart {
                 '}';
     }
 
-    String name;
-    int type;
-    int classValue;
-
-    public String getName() {
-        return name;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public int getClassValue() {
-        return classValue;
-    }
-
-    private Question(QuestionBuilder builder) {
-        this.name = builder.name;
-        this.type = builder.type;
-        this.classValue = builder.classValue;
-        this.position = builder.position;
-    }
-
-    public byte[] toBytes() {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try {
-            String[] split = name.split("\\.");
-            for (String s : split) {
-                output.write(s.length());
-                output.write(s.getBytes(StandardCharsets.UTF_8));
-            }
-            output.write(0x00);
-            output.write(intToBytes(type, 2));
-            output.write(intToBytes(classValue, 2));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return output.toByteArray();
-    }
-
-    public int getPosition() {
-        return position;
+    @Override
+    protected byte[] additionalInfo() {
+        return new byte[0];
     }
 
     public static class QuestionBuilder {
@@ -104,19 +84,20 @@ public class Question implements DNSPart {
             return new Question(this);
         }
 
-        public Question from(byte[] data, int questionToRetrieve) {
-            for (int x = 1; x <= questionToRetrieve; x++) {
+        public QuestionBuilder from(byte[] data, int questionToRetrieve, int startPosition) {
+            DataCursor cursor = new DataCursor(data, startPosition);
 
-                DNSParserUtils.NameParseResult result = DNSParserUtils.parseName(data, position);
-                this.name = result.name();
-                position = result.position();
-                this.type = readUInt16(data, position);
-                position += 2;
-                this.classValue = readUInt16(data, position);
-                position += 2;
+            for (int i = 0; i < questionToRetrieve - 1; i++) {
+                cursor.skipQuestion(); // skip questions until target
             }
-            return new Question(this);
+
+            this.name = cursor.readName();
+            this.type = cursor.readUInt16();
+            this.classValue = cursor.readUInt16();
+            this.position = cursor.getPosition();
+            return this;
         }
+
     }
 
 }
