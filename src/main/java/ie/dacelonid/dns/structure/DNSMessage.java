@@ -32,7 +32,7 @@ public class DNSMessage {
         header = new Header.HeaderBuilder().from(data);
         questions = new ArrayList<>();
         answers = new ArrayList<>();
-        for (int x = 0; x < header.getQuestionCount(); x++) {
+        for (int x = 1; x <= header.getQuestionCount(); x++) {
             questions.add(new Question.QuestionBuilder().from(data, x));
         }
         if (header.getAnsRecordCount() > 0) {
@@ -50,7 +50,11 @@ public class DNSMessage {
         questions = new ArrayList<>();
         answers = new ArrayList<>();
         for (Question requestQuestion : request.questions) {
-            questions.add(new Question.QuestionBuilder().name(requestQuestion.getName()).type(requestQuestion.getType()).classValue(requestQuestion.getClassValue()).build());
+            questions.add(new Question.QuestionBuilder()
+                    .name(requestQuestion.getName())
+                    .type(requestQuestion.getType())
+                    .classValue(requestQuestion.getClassValue())
+                    .build());
         }
     }
 
