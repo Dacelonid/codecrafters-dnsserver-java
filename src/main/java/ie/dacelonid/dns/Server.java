@@ -47,10 +47,10 @@ public class Server implements Runnable {
     private void handleClient(DatagramPacket packet) {
         DNSMessage request = DNSMessage.from(packet.getData());
         DNSMessage response = DNSMessage.from(request);
-        for (Question question : response.getQuestions()) {
+        for (Question question : request.getQuestions()) {
             //For each question figure out if to handle the response or to forward
             if (ip != null && port != 0) {
-                response.addAnswer(getResponses(request.getHeader().getPacketID(), question));
+                response.addAnswer(lookupIP(request.getHeader().getPacketID(), question));
             } else {
                 response.addAnswer(new Answer.AnswerBuilder().name(question.getName()).type(question.getType()).classValue(question.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build());
             }
@@ -58,17 +58,13 @@ public class Server implements Runnable {
         sendResponse(response, packet.getSocketAddress());
     }
 
-    private Answer getResponses(int packetID, Question question) {
+    private Answer lookupIP(int packetID, Question question) {
         Header forwardHeader = new Header.HeaderBuilder().packetID(packetID).questionCount(1).recurDesired(1).build();
-        ByteBuffer forwardMessage = ByteBuffer.allocate(512);
-        forwardMessage.put(forwardHeader.tobytes());
-        forwardMessage.put(question.toBytes());
+        byte[] forwardBytes = getMessageBytes(question, forwardHeader);
 
-        byte[] forwardBytes = forwardMessage.array();
         try (DatagramSocket socket = new DatagramSocket()) {
             DatagramPacket request = new DatagramPacket(forwardBytes, forwardBytes.length, InetAddress.getByName(ip), port);
             socket.send(request);
-
             byte[] responseBuffer = new byte[512];
             DatagramPacket response = new DatagramPacket(responseBuffer, responseBuffer.length);
             socket.setSoTimeout(2000); // Avoid blocking forever
@@ -83,6 +79,13 @@ public class Server implements Runnable {
         }
 
         return new Answer.AnswerBuilder().name(question.getName()).type(question.getType()).classValue(question.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build();
+    }
+
+    private static byte[] getMessageBytes(Question question, Header forwardHeader) {
+        ByteBuffer forwardMessage = ByteBuffer.allocate(512);
+        forwardMessage.put(forwardHeader.tobytes());
+        forwardMessage.put(question.toBytes());
+        return forwardMessage.array();
     }
 
     private void sendResponse(DNSMessage response, SocketAddress replyAddress) {
