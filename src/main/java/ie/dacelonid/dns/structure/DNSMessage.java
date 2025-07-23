@@ -11,15 +11,6 @@ public class DNSMessage {
     private final List<Question> questions;
     private final List<Answer> answers;
 
-    @Override
-    public String toString() {
-        return "DNSMessage{" +
-                "header=" + header +
-                ", questions=" + questions +
-                ", answers=" + answers +
-                '}';
-    }
-
     public List<Question> getQuestions() {
         return questions;
     }
@@ -40,7 +31,7 @@ public class DNSMessage {
                 int position = 0;
                 for (Question question : questions)
                     position = question.getPosition();
-                answers.add(new Answer.AnswerBuilder().froma(data, x, position));
+                answers.add(new Answer.AnswerBuilder().from(data, x, position));
             }
         }
     }
@@ -73,30 +64,17 @@ public class DNSMessage {
     public byte[] tobytes() {
         ByteBuffer buffer = ByteBuffer.allocate(512);
         buffer.put(header.tobytes());
-        buffer.put(getQuestionBytes());
-        buffer.put(getAnswerBytes());
+        buffer.put(getBytes(questions));
+        buffer.put(getBytes(answers));
         return buffer.array();
     }
 
 
-    private byte[] getQuestionBytes() {
+    private byte[] getBytes(List<? extends DNSPart> elements) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-        for (Question question : questions) {
+        for (DNSPart dnsPart : elements) {
             try {
-                stream.write(question.toBytes());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return stream.toByteArray();
-    }
-
-    private byte[] getAnswerBytes() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        for (Answer answer : answers) {
-            try {
-                stream.write(answer.toBytes());
+                stream.write(dnsPart.toBytes());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

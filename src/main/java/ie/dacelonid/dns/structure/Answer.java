@@ -1,14 +1,16 @@
 package ie.dacelonid.dns.structure;
 
 
+import ie.dacelonid.dns.bitutils.DNSParserUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.StringJoiner;
 
-public class Answer {
+import static ie.dacelonid.dns.bitutils.DNSParserUtils.*;
+
+public class Answer implements DNSPart {
     private final String name;
     private final int length;
     private final int classValue;
@@ -23,7 +25,6 @@ public class Answer {
         this.classValue = answerBuilder.classValue;
         this.timeToLive = answerBuilder.timeToLive;
         this.data = answerBuilder.data;
-
     }
 
 
@@ -48,16 +49,6 @@ public class Answer {
         return output.toByteArray();
     }
 
-    private byte[] intToBytes(int x, int size) {
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        if (size == 2) {
-            buffer.putShort((short) x);
-        } else {
-            buffer.putInt(x);
-        }
-        return buffer.flip().array();
-    }
-
     public static class AnswerBuilder {
         private int length;
         private String name;
@@ -65,7 +56,6 @@ public class Answer {
         private int classValue;
         private int timeToLive;
         private int data;
-
         public AnswerBuilder name(String name) {
             this.name = name;
             return this;
@@ -93,12 +83,10 @@ public class Answer {
 
         public AnswerBuilder data(String data) {
             String[] parts = data.split("\\.");
-
             int b1 = Integer.parseInt(parts[0]) & 0xFF;
             int b2 = Integer.parseInt(parts[1]) & 0xFF;
             int b3 = Integer.parseInt(parts[2]) & 0xFF;
             int b4 = Integer.parseInt(parts[3]) & 0xFF;
-
             this.data = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
             return this;
         }
@@ -107,125 +95,24 @@ public class Answer {
             return new Answer(this);
         }
 
-        public Answer from(byte[] data, int whichAnswer, int totalQuestions) {
-            Question question = new Question.QuestionBuilder().from(data, totalQuestions);//skip the Question part
-            int position = question.getPosition();
+        public Answer from(byte[] data, int whichAnswer, int position) {
             for (int x = 0; x <= whichAnswer; x++) {
-                position = parseNameFromData(data, position);
-                position = parseTypeFromData(data, position);
-                position = parseClassFromData(data, position);
-                position = parseTimeToLiveFromData(data, position);
-                position = parseLengthFromData(data, position);
-                position = parseDataPayLoadFromData(data, position);
+                DNSParserUtils.NameParseResult result = DNSParserUtils.parseName(data, position);
+                this.name = result.name();
+                position = result.position();
+                this.type = readUInt16(data, position);
+                position += 2;
+                this.classValue = readUInt16(data, position);
+                position += 2;
+                this.timeToLive = readUInt32(data, position);
+                position += 4;
+                this.length = readUInt16(data, position);
+                position += 2;
+                this.data = readUInt32(data, position);
+                position += 4;
             }
             return new Answer(this);
         }
-
-        public Answer froma(byte[] data, int whichAnswer, int position) {
-            for (int x = 0; x <= whichAnswer; x++) {
-                position = parseNameFromData(data, position);
-                position = parseTypeFromData(data, position);
-                position = parseClassFromData(data, position);
-                position = parseTimeToLiveFromData(data, position);
-                position = parseLengthFromData(data, position);
-                position = parseDataPayLoadFromData(data, position);
-            }
-            return new Answer(this);
-        }
-
-        private int parseNameFromData(byte[] data, int position) {
-            StringJoiner name = new StringJoiner(".");
-            while (position < data.length) {
-
-                int length = data[position++] & 0xFF; // read length and advance
-                if ((length & 192) == 192) { //compression, so jump to pointer location
-                    int nextByte = data[position++] & 0xFF;
-                    int pointer = ((length & 0x3F) << 8) | nextByte; //pointer to
-                    name.add(parseNameFromDataa(data, pointer));
-                    break;
-                }
-
-                if (length == 0) {
-                    break; // null terminator indicates end of name
-                }
-
-                name.add(new String(data, position, length, StandardCharsets.UTF_8));
-                position += length;
-            }
-            this.name = name.toString();
-            return position;
-        }
-
-        private String parseNameFromDataa(byte[] data, int offset) {
-            StringJoiner name = new StringJoiner(".");
-            while (offset < data.length) {
-                int length = data[offset++] & 0xFF; // read length and advance
-
-                if (length == 0) {
-                    break; // null terminator indicates end of name
-                }
-
-                name.add(new String(data, offset, length, StandardCharsets.UTF_8));
-                offset += length;
-            }
-            return name.toString();
-        }
-
-        private int parseTypeFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.type = f.getInt();
-            return position;
-        }
-
-        private int parseClassFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.classValue = f.getInt();
-            return position;
-        }
-
-        private int parseTimeToLiveFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.timeToLive = f.getInt();
-            return position;
-        }
-
-        private int parseLengthFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.length = f.getInt();
-            return position;
-        }
-
-        private int parseDataPayLoadFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.data = f.getInt();
-            return position;
-        }
-
     }
 
 
@@ -238,5 +125,16 @@ public class Answer {
     @Override
     public int hashCode() {
         return Objects.hash(name, length, classValue, timeToLive, data, type);
+    }
+
+    public String toString() {
+        return "Answer{" +
+                "name='" + name + '\'' +
+                ", length=" + length +
+                ", classValue=" + classValue +
+                ", timeToLive=" + timeToLive +
+                ", data=" + data +
+                ", type=" + type +
+                '}';
     }
 }
