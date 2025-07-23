@@ -5,11 +5,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static ie.dacelonid.dns.structure.DNSParserUtils.parseRecords;
 
 public class DNSMessage {
-    private final Header header;
+    private Header header;
     private final List<Question> questions;
     private final List<Answer> answers;
 
@@ -19,6 +20,19 @@ public class DNSMessage {
 
     public void addAnswer(Answer answer) {
         answers.add(answer);
+    }
+
+    public void addQuestion(Question question) {
+        questions.add(question);
+    }
+
+    public void setHeader(Header header) {
+        this.header = header;
+    }
+
+    public DNSMessage() {
+        questions = new ArrayList<>();
+        answers = new ArrayList<>();
     }
 
     private DNSMessage(byte[] data) {
@@ -33,15 +47,8 @@ public class DNSMessage {
 
     public DNSMessage(DNSMessage request) {
         header = new Header.HeaderBuilder().fromRequest(request);
-        questions = new ArrayList<>();
+        questions = new ArrayList<>(request.questions); // one-liner copy
         answers = new ArrayList<>();
-        for (Question requestQuestion : request.questions) {
-            questions.add(new Question.QuestionBuilder()
-                    .name(requestQuestion.getName())
-                    .type(requestQuestion.getType())
-                    .classValue(requestQuestion.getClassValue())
-                    .build());
-        }
     }
 
     public static DNSMessage from(DNSMessage request) {
@@ -79,5 +86,26 @@ public class DNSMessage {
 
     public List<Answer> getAnswers() {
         return answers;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof DNSMessage that)) return false;
+        return Objects.equals(header, that.header) && Objects.equals(questions, that.questions) && Objects.equals(answers, that.answers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(header, questions, answers);
+    }
+
+    @Override
+    public String toString() {
+        return "DNSMessage{" +
+                "header=" + header +
+                ", questions=" + questions +
+                ", answers=" + answers +
+                '}';
     }
 }

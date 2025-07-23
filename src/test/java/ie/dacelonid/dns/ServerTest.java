@@ -12,8 +12,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,66 +34,45 @@ public class ServerTest {
     @Test
     public void serverTestWithCompression() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest(getCompressedQuestion(), 3);
-        byte[] response = datagramPacket.getData();
+        DNSMessage actualResponse = DNSMessage.from(datagramPacket.getData());
+        DNSMessage expected = getExpectedResponse();
 
-        DNSMessage actualResponse = DNSMessage.from(response);
-        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
-        assertEquals(expectedHeader, actualResponse.getHeader());
-        List<Question> expectedQuestions = new ArrayList<>();
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build());
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build());
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build());
-        assertEquals(expectedQuestions, actualResponse.getQuestions());
-
-        List<Answer> expectedAnswers = new ArrayList<>();
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        assertEquals(expectedAnswers, actualResponse.getAnswers());
+        assertEquals(expected, actualResponse);
     }
 
     @Test
-
-
     public void serverTestWithoutCompression() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest(getuncompressedMultiplQuestion(), 3);
-        byte[] response = datagramPacket.getData();
+        DNSMessage actualResponse = DNSMessage.from(datagramPacket.getData());
+        DNSMessage expected = getExpectedResponse();
 
-        DNSMessage actualResponse = DNSMessage.from(response);
-        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build();
-        assertEquals(expectedHeader, actualResponse.getHeader());
-        List<Question> expectedQuestions = new ArrayList<>();
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build());
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build());
-        expectedQuestions.add(new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build());
-        assertEquals(expectedQuestions, actualResponse.getQuestions());
-
-        List<Answer> expectedAnswers = new ArrayList<>();
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        expectedAnswers.add(new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
-        assertEquals(expectedAnswers, actualResponse.getAnswers());
+        assertEquals(expected, actualResponse);
     }
 
     @Test
-
-
     public void serverForwardingTest() throws Exception {
         DatagramPacket datagramPacket = sendDNSRequest(getRemoteIPQuestion(), 1);
-        byte[] response = datagramPacket.getData();
-        DNSMessage actualResponse = DNSMessage.from(response);
+        DNSMessage actualResponse = DNSMessage.from(datagramPacket.getData());
 
-        Header header = actualResponse.getHeader();
-        Header expectedHeader = new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build();
-        assertEquals(expectedHeader, header);
 
-        Question expectedQuestion = new Question.QuestionBuilder().name("codecrafters.io").type(1).classValue(1).build();
-        Question question = actualResponse.getQuestions().getFirst();
-        assertEquals(expectedQuestion, question);
+        DNSMessage expected = new DNSMessage();
+        expected.setHeader(new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(1).questionCount(1).recurDesired(1).build());
+        expected.addQuestion(new Question.QuestionBuilder().name("codecrafters.io").type(1).classValue(1).build());
+        expected.addAnswer(new Answer.AnswerBuilder().name("codecrafters.io").type(1).classValue(1).length(4).data("76.76.21.21").build());
 
-        Answer expectedAnswer = new Answer.AnswerBuilder().name("codecrafters.io").type(1).classValue(1).length(4).data("76.76.21.21").build();
-        Answer answer = actualResponse.getAnswers().getFirst();
-        assertEquals(expectedAnswer, answer);
+        assertEquals(expected, actualResponse);
+    }
+
+    private static DNSMessage getExpectedResponse() {
+        DNSMessage expected = new DNSMessage();
+        expected.setHeader(new Header.HeaderBuilder().packetID(5878).queryResponseID(1).ansRecordCount(3).questionCount(3).recurDesired(1).build());
+        expected.addQuestion(new Question.QuestionBuilder().name("www.exmmmme.com").type(1).classValue(1).build());
+        expected.addQuestion(new Question.QuestionBuilder().name("www.exmmmme.org").type(1).classValue(1).build());
+        expected.addQuestion(new Question.QuestionBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).build());
+        expected.addAnswer(new Answer.AnswerBuilder().name("www.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expected.addAnswer(new Answer.AnswerBuilder().name("www.exmmmme.org").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        expected.addAnswer(new Answer.AnswerBuilder().name("www.somewhere.exmmmme.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build());
+        return expected;
     }
 
 
