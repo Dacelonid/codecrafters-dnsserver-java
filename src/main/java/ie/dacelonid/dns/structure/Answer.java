@@ -90,11 +90,11 @@ public class Answer extends DNSPart {
             return new Answer(this);
         }
 
-        public AnswerBuilder from(byte[] data, int whichAnswer) {
+        public AnswerBuilder from(byte[] data, int answerToRetrieve) {
             DataCursor cursor = new DataCursor(data);
             cursor.skipQuestions();
 
-            for (int i = 0; i < whichAnswer; i++) {
+            for (int i = 0; i < answerToRetrieve; i++) {
                 cursor.skipAnswer();
             }
             this.name = cursor.readName();
