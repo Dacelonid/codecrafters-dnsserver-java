@@ -44,7 +44,6 @@ public class Server implements Runnable {
             }
         } catch (Exception e) {
             System.out.println("IOException: " + e.getMessage());
-            e.printStackTrace();
             keepRunning = false;
         }
     }
@@ -63,7 +62,7 @@ public class Server implements Runnable {
         sendResponse(response, packet.getSocketAddress());
     }
 
-    private Answer getResponses(int packetID, Question question){
+    private Answer getResponses(int packetID, Question question) {
         Header forwardHeader = new Header.HeaderBuilder().packetID(packetID).questionCount(1).recurDesired(1).build();
         ByteBuffer forwardMessage = ByteBuffer.allocate(512);
         forwardMessage.put(forwardHeader.tobytes());
@@ -79,8 +78,10 @@ public class Server implements Runnable {
             socket.setSoTimeout(2000); // Avoid blocking forever
             socket.receive(response);
             DNSMessage responseMessage = DNSMessage.from(responseBuffer);
-            return responseMessage.getAnswers().getFirst();
-
+            if (responseMessage.getHeader().getAnsRecordCount() > 0) {
+                return responseMessage.getAnswers().getFirst();
+            }
+            return new Answer.AnswerBuilder().name(question.getName()).type(question.getType()).classValue(question.getClassValue()).timeToLive(60).length(4).data("8.8.8.8").build();
         } catch (Exception e) {
             System.out.println("Could not get response from upstream DNS \n>" + e.getMessage());
         }
