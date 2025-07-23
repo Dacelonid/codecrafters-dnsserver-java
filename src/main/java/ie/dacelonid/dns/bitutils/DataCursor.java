@@ -1,16 +1,18 @@
 package ie.dacelonid.dns.bitutils;
 
+import ie.dacelonid.dns.structure.DNSParserUtils;
+
 public class DataCursor {
     private final byte[] data;
+    private final int answerCount;
+    private final int questionCount;
     private int position;
 
     public DataCursor(byte[] data) {
         this.data = data;
         this.position = 0;
-    }
-
-    public int getPosition() {
-        return position;
+        questionCount = ((data[4] & 0xFF) << 8) | (data[5] & 0xFF);
+        answerCount = ((data[6] & 0xFF) << 8) | (data[7] & 0xFF);
     }
 
     public String readName() {
@@ -44,13 +46,13 @@ public class DataCursor {
         skipBytes(4); // QTYPE (2) + QCLASS (2)
     }
 
-    public void skipQuestions(int numberOfQuestions) {
-        if(position == 0){
+    public void skipQuestions() {
+        if (position == 0) {
             skipHeader();
         }
-        for (int x = 0; x < numberOfQuestions; x++) {
-            skipName();
-            skipBytes(4); // QTYPE (2) + QCLASS (2)
+
+        for (int x = 0; x < questionCount; x++) {
+            skipQuestion();
         }
     }
 
