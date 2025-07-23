@@ -79,10 +79,7 @@ public class Server implements Runnable {
             socket.setSoTimeout(2000); // Avoid blocking forever
             socket.receive(response);
             DNSMessage responseMessage = DNSMessage.from(responseBuffer);
-            //TODO add the response answers to the actual reponse
-            System.out.println("response from upstream :\n" + responseMessage);
-            Answer first = responseMessage.getAnswers().getFirst();
-            return first;
+            return responseMessage.getAnswers().getFirst();
 
         } catch (Exception e) {
             System.out.println("Could not get response from upstream DNS \n>" + e.getMessage());

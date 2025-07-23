@@ -9,29 +9,6 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 public class Answer {
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Answer answer)) return false;
-        return length == answer.length && classValue == answer.classValue &&  data == answer.data && type == answer.type && Objects.equals(name, answer.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, length, classValue, timeToLive, data, type);
-    }
-
-    @Override
-    public String toString() {
-        return "Answer{" +
-                "name='" + name + '\'' +
-                ", length=" + length +
-                ", classValue=" + classValue +
-                ", timeToLive=" + timeToLive +
-                ", data=" + data +
-                ", type=" + type +
-                '}';
-    }
-
     private final String name;
     private final int length;
     private final int classValue;
@@ -48,6 +25,7 @@ public class Answer {
         this.data = answerBuilder.data;
 
     }
+
 
     public byte[] toBytes() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -115,9 +93,6 @@ public class Answer {
 
         public AnswerBuilder data(String data) {
             String[] parts = data.split("\\.");
-            if (parts.length != 4) {
-                throw new IllegalArgumentException("Invalid IPv4 address: " + data);
-            }
 
             int b1 = Integer.parseInt(parts[0]) & 0xFF;
             int b2 = Integer.parseInt(parts[1]) & 0xFF;
@@ -133,7 +108,7 @@ public class Answer {
         }
 
         public Answer from(byte[] data, int whichAnswer, int totalQuestions) {
-            Question question = new Question.QuestionBuilder().from(data, totalQuestions-1);//skip the Question part
+            Question question = new Question.QuestionBuilder().from(data, totalQuestions);//skip the Question part
             int position = question.getPosition();
             for (int x = 0; x <= whichAnswer; x++) {
                 position = parseNameFromData(data, position);
@@ -141,7 +116,7 @@ public class Answer {
                 position = parseClassFromData(data, position);
                 position = parseTimeToLiveFromData(data, position);
                 position = parseLengthFromData(data, position);
-                position = parseDataFromData(data, position);
+                position = parseDataPayLoadFromData(data, position);
             }
             return new Answer(this);
         }
@@ -153,64 +128,9 @@ public class Answer {
                 position = parseClassFromData(data, position);
                 position = parseTimeToLiveFromData(data, position);
                 position = parseLengthFromData(data, position);
-                position = parseDataFromData(data, position);
+                position = parseDataPayLoadFromData(data, position);
             }
             return new Answer(this);
-        }
-
-        private int parseDataFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.data = f.getInt();
-            return position;
-        }
-
-        private int parseLengthFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.length = f.getInt();
-            return position;
-        }
-
-        private int parseTimeToLiveFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.timeToLive = f.getInt();
-            return position;
-        }
-
-        private int parseClassFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.classValue = f.getInt();
-            return position;
-        }
-
-        private int parseTypeFromData(byte[] data, int position) {
-            ByteBuffer f = ByteBuffer.allocate(4);
-            f.put((byte) 0x00);
-            f.put((byte) 0x00);
-            f.put(data[position++]);
-            f.put(data[position++]);
-            f.flip();
-            this.type = f.getInt();
-            return position;
         }
 
         private int parseNameFromData(byte[] data, int position) {
@@ -218,9 +138,9 @@ public class Answer {
             while (position < data.length) {
 
                 int length = data[position++] & 0xFF; // read length and advance
-                if((length & 192) == 192) { //compression
+                if ((length & 192) == 192) { //compression, so jump to pointer location
                     int nextByte = data[position++] & 0xFF;
-                    int pointer = ((length & 0x3F) << 8) | nextByte;
+                    int pointer = ((length & 0x3F) << 8) | nextByte; //pointer to
                     name.add(parseNameFromDataa(data, pointer));
                     break;
                 }
@@ -251,5 +171,72 @@ public class Answer {
             return name.toString();
         }
 
+        private int parseTypeFromData(byte[] data, int position) {
+            ByteBuffer f = ByteBuffer.allocate(4);
+            f.put((byte) 0x00);
+            f.put((byte) 0x00);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.flip();
+            this.type = f.getInt();
+            return position;
+        }
+
+        private int parseClassFromData(byte[] data, int position) {
+            ByteBuffer f = ByteBuffer.allocate(4);
+            f.put((byte) 0x00);
+            f.put((byte) 0x00);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.flip();
+            this.classValue = f.getInt();
+            return position;
+        }
+
+        private int parseTimeToLiveFromData(byte[] data, int position) {
+            ByteBuffer f = ByteBuffer.allocate(4);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.flip();
+            this.timeToLive = f.getInt();
+            return position;
+        }
+
+        private int parseLengthFromData(byte[] data, int position) {
+            ByteBuffer f = ByteBuffer.allocate(4);
+            f.put((byte) 0x00);
+            f.put((byte) 0x00);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.flip();
+            this.length = f.getInt();
+            return position;
+        }
+
+        private int parseDataPayLoadFromData(byte[] data, int position) {
+            ByteBuffer f = ByteBuffer.allocate(4);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.put(data[position++]);
+            f.flip();
+            this.data = f.getInt();
+            return position;
+        }
+
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Answer answer)) return false;
+        return length == answer.length && classValue == answer.classValue && data == answer.data && type == answer.type && Objects.equals(name, answer.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, length, classValue, timeToLive, data, type);
     }
 }

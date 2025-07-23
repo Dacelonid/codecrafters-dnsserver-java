@@ -3,7 +3,6 @@ package ie.dacelonid.dns.structure;
 import ie.dacelonid.dns.bitutils.BitReader;
 import ie.dacelonid.dns.bitutils.BitWriter;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class Header {
@@ -21,34 +20,6 @@ public class Header {
     private final int authRecordCount;
     private final int additionalRecordCount;
 
-    public int getQueryResponseID() {
-        return queryResponseID;
-    }
-
-    public int getAuthAns() {
-        return authAns;
-    }
-
-    public int getTrunc() {
-        return trunc;
-    }
-
-    public int getRecurDesired() {
-        return recurDesired;
-    }
-
-    public int getRecurAvail() {
-        return recurAvail;
-    }
-
-    public int getReserved() {
-        return reserved;
-    }
-
-    public int getRespCode() {
-        return respCode;
-    }
-
     public int getQuestionCount() {
         return questionCount;
     }
@@ -57,13 +28,10 @@ public class Header {
         return ansRecordCount;
     }
 
-    public int getAuthRecordCount() {
-        return authRecordCount;
+    public int getRecurDesired() {
+        return recurDesired;
     }
 
-    public int getAdditionalRecordCount() {
-        return additionalRecordCount;
-    }
 
     public Header(byte[] header) {
         BitReader reader = new BitReader(header);
@@ -83,21 +51,21 @@ public class Header {
     }
 
     public byte[] tobytes() {
-            BitWriter writer = new BitWriter(12);
-            writer.writeBits(packetID, 16);
-            writer.writeBits(queryResponseID, 1);
-            writer.writeBits(opCode, 4);
-            writer.writeBits(authAns, 1);
-            writer.writeBits(trunc, 1);
-            writer.writeBits(recurDesired, 1);
-            writer.writeBits(recurAvail, 1);
-            writer.writeBits(reserved, 3);
-            writer.writeBits(respCode, 4);
-            writer.writeBits(questionCount, 16);
-            writer.writeBits(ansRecordCount, 16);
-            writer.writeBits(authRecordCount, 16);
-            writer.writeBits(additionalRecordCount, 16);
-            return writer.getBytes();
+        BitWriter writer = new BitWriter(12);
+        writer.writeBits(packetID, 16);
+        writer.writeBits(queryResponseID, 1);
+        writer.writeBits(opCode, 4);
+        writer.writeBits(authAns, 1);
+        writer.writeBits(trunc, 1);
+        writer.writeBits(recurDesired, 1);
+        writer.writeBits(recurAvail, 1);
+        writer.writeBits(reserved, 3);
+        writer.writeBits(respCode, 4);
+        writer.writeBits(questionCount, 16);
+        writer.writeBits(ansRecordCount, 16);
+        writer.writeBits(authRecordCount, 16);
+        writer.writeBits(additionalRecordCount, 16);
+        return writer.getBytes();
     }
 
     private Header(HeaderBuilder builder) {
@@ -158,16 +126,16 @@ public class Header {
         private int packetID = 0;
         private int queryResponseID = 0;
         private int opCode = 0;
-        private int authAns = 0;
-        private int trunc = 0;
+        private final int authAns = 0;
+        private final int trunc = 0;
         private int recurDesired = 0;
-        private int recurAvail = 0;
-        private int reserved = 0;
+        private final int recurAvail = 0;
+        private final int reserved = 0;
         private int respCode = 0;
         private int questionCount = 0;
         private int ansRecordCount = 0;
-        private int authRecordCount = 0;
-        private int additionalRecordCount = 0;
+        private final int authRecordCount = 0;
+        private final int additionalRecordCount = 0;
 
         public HeaderBuilder packetID(int packetID) {
             this.packetID = packetID;
@@ -184,30 +152,12 @@ public class Header {
             return this;
         }
 
-        public HeaderBuilder authAns(int authAns) {
-            this.authAns = authAns;
-            return this;
-        }
-
-        public HeaderBuilder trunc(int trunc) {
-            this.trunc = trunc;
-            return this;
-        }
 
         public HeaderBuilder recurDesired(int recurDesired) {
             this.recurDesired = recurDesired;
             return this;
         }
 
-        public HeaderBuilder recurAvail(int recurAvail) {
-            this.recurAvail = recurAvail;
-            return this;
-        }
-
-        public HeaderBuilder reserved(int reserved) {
-            this.reserved = reserved;
-            return this;
-        }
 
         public HeaderBuilder respCode(int respCode) {
             this.respCode = respCode;
@@ -224,15 +174,6 @@ public class Header {
             return this;
         }
 
-        public HeaderBuilder authRecordCount(int authRecordCount) {
-            this.authRecordCount = authRecordCount;
-            return this;
-        }
-
-        public HeaderBuilder additionalRecordCount(int additionalRecordCount) {
-            this.additionalRecordCount = additionalRecordCount;
-            return this;
-        }
 
         public Header build() {
             return new Header(this);

@@ -106,8 +106,8 @@ public class Question {
             return new Question(this);
         }
 
-        public Question from(byte[] data, int count) {
-            for (int x = 0;x<=count;x++) {
+        public Question from(byte[] data, int questionToRetrieve) {
+            for (int x = 1;x<=questionToRetrieve;x++) {
                 parseNameFromData(data);
                 parseTypeFromData(data);
                 parseClassFromData(data);

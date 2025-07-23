@@ -41,15 +41,15 @@ public class ServerTest {
         assertEquals(expectedHeader, header);
 
         Question expectedQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 0);
+        Question question = new Question.QuestionBuilder().from(response, 1);
         assertEquals(expectedQuestion, question);
 
         expectedQuestion = new Question.QuestionBuilder().name("www.example.org").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 1);
+        question = new Question.QuestionBuilder().from(response, 2);
         assertEquals(expectedQuestion, question);
 
         expectedQuestion = new Question.QuestionBuilder().name("www.somewhere.example.com").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 2);
+        question = new Question.QuestionBuilder().from(response, 3);
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
@@ -77,15 +77,15 @@ public class ServerTest {
         assertEquals(expectedHeader, header);
 
         Question expectedQuestion = new Question.QuestionBuilder().name("www.example.com").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 0);
+        Question question = new Question.QuestionBuilder().from(response, 1);
         assertEquals(expectedQuestion, question);
 
         expectedQuestion = new Question.QuestionBuilder().name("www.example.org").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 1);
+        question = new Question.QuestionBuilder().from(response, 2);
         assertEquals(expectedQuestion, question);
 
         expectedQuestion = new Question.QuestionBuilder().name("www.somewhere.example.com").type(1).classValue(1).build();
-        question = new Question.QuestionBuilder().from(response, 2);
+        question = new Question.QuestionBuilder().from(response, 3);
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("www.example.com").type(1).classValue(1).timeToLive(60).length(4).data("8.8.8.8").build();
@@ -119,7 +119,7 @@ public class ServerTest {
         assertEquals(expectedHeader, header);
 
         Question expectedQuestion = new Question.QuestionBuilder().name("codecrafters.io").type(1).classValue(1).build();
-        Question question = new Question.QuestionBuilder().from(response, 0);
+        Question question = new Question.QuestionBuilder().from(response, 1);
         assertEquals(expectedQuestion, question);
 
         Answer expectedAnswer = new Answer.AnswerBuilder().name("codecrafters.io").type(1).classValue(1).length(4).data("76.76.21.21").build();
