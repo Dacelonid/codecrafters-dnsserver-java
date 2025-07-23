@@ -1,7 +1,9 @@
-package ie.dacelonid.dns.bitutils;
+package ie.dacelonid.dns.structure;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringJoiner;
 
 public class DNSParserUtils {
@@ -14,7 +16,7 @@ public class DNSParserUtils {
     public static int readUInt32(byte[] data, int position) {
         return ((data[position++] & 0xFF) << 24) |
                 ((data[position++] & 0xFF) << 16) |
-                ((data[position++] & 0xFF) << 8)  |
+                ((data[position++] & 0xFF) << 8) |
                 (data[position] & 0xFF);
     }
 
@@ -63,6 +65,15 @@ public class DNSParserUtils {
         return buffer.flip().array();
     }
 
-    public record NameParseResult(String name, int position){}
+    public record NameParseResult(String name, int position) {
+    }
 
+
+    protected static <T> List<T> parseRecords(byte[] data, int count, DNSRecordFactory<T> factory) {
+        List<T> result = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(factory.from(data, i));
+        }
+        return result;
+    }
 }

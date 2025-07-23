@@ -1,11 +1,8 @@
 package ie.dacelonid.dns.structure;
 
-import ie.dacelonid.dns.bitutils.DNSParserUtils;
 import ie.dacelonid.dns.bitutils.DataCursor;
 
 import java.util.Objects;
-
-import static ie.dacelonid.dns.bitutils.DNSParserUtils.readUInt16;
 
 public class Question extends DNSPart {
     public String getName() {
@@ -79,7 +76,7 @@ public class Question extends DNSPart {
             DataCursor cursor = new DataCursor(data);
             cursor.skipHeader();
 
-            for (int i = 0; i < questionToRetrieve - 1; i++) {
+            for (int i = 0; i < questionToRetrieve; i++) {
                 cursor.skipQuestion(); // skip questions until target
             }
 

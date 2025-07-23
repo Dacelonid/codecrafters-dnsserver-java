@@ -5,9 +5,11 @@ import ie.dacelonid.dns.bitutils.DataCursor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
-import static ie.dacelonid.dns.bitutils.DNSParserUtils.intToBytes;
+import static ie.dacelonid.dns.structure.DNSParserUtils.intToBytes;
 
 public class Answer extends DNSPart {
     private final int length;
@@ -70,12 +72,17 @@ public class Answer extends DNSPart {
         }
 
         public AnswerBuilder data(String data) {
-            String[] parts = data.split("\\.");
-            int b1 = Integer.parseInt(parts[0]) & 0xFF;
-            int b2 = Integer.parseInt(parts[1]) & 0xFF;
-            int b3 = Integer.parseInt(parts[2]) & 0xFF;
-            int b4 = Integer.parseInt(parts[3]) & 0xFF;
-            this.data = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+            try {
+                byte[] bytes = InetAddress.getByName(data).getAddress();
+                if (bytes.length != 4) throw new IllegalArgumentException("Not an IPv4 address");
+                this.data = ((bytes[0] & 0xFF) << 24) |
+                        ((bytes[1] & 0xFF) << 16) |
+                        ((bytes[2] & 0xFF) << 8) |
+                        (bytes[3] & 0xFF);
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("Invalid IP address: " + data, e);
+            }
+
             return this;
         }
 
@@ -83,9 +90,10 @@ public class Answer extends DNSPart {
             return new Answer(this);
         }
 
-        public AnswerBuilder from(byte[] data, int whichAnswer, int numberOfQuestions) {
+        public AnswerBuilder from(byte[] data, int whichAnswer) {
             DataCursor cursor = new DataCursor(data);
-            cursor.skipQuestions(numberOfQuestions);
+            cursor.skipQuestions();
+
             for (int i = 0; i < whichAnswer; i++) {
                 cursor.skipAnswer();
             }
@@ -114,13 +122,6 @@ public class Answer extends DNSPart {
     }
 
     public String toString() {
-        return "Answer{" +
-                "name='" + name + '\'' +
-                ", length=" + length +
-                ", classValue=" + classValue +
-                ", timeToLive=" + timeToLive +
-                ", data=" + data +
-                ", type=" + type +
-                '}';
+        return "Answer{" + "name='" + name + '\'' + ", length=" + length + ", classValue=" + classValue + ", timeToLive=" + timeToLive + ", data=" + data + ", type=" + type + '}';
     }
 }

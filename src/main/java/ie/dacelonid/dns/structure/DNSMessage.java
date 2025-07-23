@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ie.dacelonid.dns.structure.DNSParserUtils.parseRecords;
+
 public class DNSMessage {
     private final Header header;
     private final List<Question> questions;
@@ -21,16 +23,12 @@ public class DNSMessage {
 
     private DNSMessage(byte[] data) {
         header = new Header.HeaderBuilder().from(data);
-        questions = new ArrayList<>();
-        answers = new ArrayList<>();
-        for (int questionNumber = 1; questionNumber <= header.getQuestionCount(); questionNumber++) {
-            questions.add(new Question.QuestionBuilder().from(data, questionNumber).build());
-        }
-        if (header.getAnsRecordCount() > 0) {
-            for (int answerNumber = 0; answerNumber < header.getAnsRecordCount(); answerNumber++) {
-                answers.add(new Answer.AnswerBuilder().from(data, answerNumber, header.getQuestionCount()).build());
-            }
-        }
+
+        questions = parseRecords(data, header.getQuestionCount(),
+                (d, numQuestions) -> new Question.QuestionBuilder().from(d, numQuestions).build());
+
+        answers = parseRecords(data, header.getAnsRecordCount(),
+                (d, numAnswers) -> new Answer.AnswerBuilder().from(d, numAnswers).build());
     }
 
     public DNSMessage(DNSMessage request) {

@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static ie.dacelonid.dns.bitutils.DNSParserUtils.intToBytes;
+import static ie.dacelonid.dns.structure.DNSParserUtils.intToBytes;
 
 public abstract class DNSPart {
 
