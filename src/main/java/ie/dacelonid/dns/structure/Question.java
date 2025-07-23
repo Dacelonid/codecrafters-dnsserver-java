@@ -8,13 +8,6 @@ import java.util.Objects;
 import static ie.dacelonid.dns.bitutils.DNSParserUtils.readUInt16;
 
 public class Question extends DNSPart {
-
-    private final int position;
-
-    public int getPosition() {
-        return position;
-    }
-
     public String getName() {
         return name;
     }
@@ -31,7 +24,6 @@ public class Question extends DNSPart {
         this.name = builder.name;
         this.type = builder.type;
         this.classValue = builder.classValue;
-        this.position = builder.position;
     }
 
     @Override
@@ -63,7 +55,6 @@ public class Question extends DNSPart {
         public String name;
         public int type;
         public int classValue;
-        private int position = 12;
 
         public QuestionBuilder name(String name) {
             this.name = name;
@@ -84,8 +75,9 @@ public class Question extends DNSPart {
             return new Question(this);
         }
 
-        public QuestionBuilder from(byte[] data, int questionToRetrieve, int startPosition) {
-            DataCursor cursor = new DataCursor(data, startPosition);
+        public QuestionBuilder from(byte[] data, int questionToRetrieve) {
+            DataCursor cursor = new DataCursor(data);
+            cursor.skipHeader();
 
             for (int i = 0; i < questionToRetrieve - 1; i++) {
                 cursor.skipQuestion(); // skip questions until target
@@ -94,7 +86,6 @@ public class Question extends DNSPart {
             this.name = cursor.readName();
             this.type = cursor.readUInt16();
             this.classValue = cursor.readUInt16();
-            this.position = cursor.getPosition();
             return this;
         }
 
